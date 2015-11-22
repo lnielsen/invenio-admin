@@ -54,8 +54,6 @@ class TestModel(db.Model):
 class TestModelView(ModelView):
     """AdminModelView of the TestModel."""
 
-    pass
-
 
 @pytest.fixture()
 def app(request):

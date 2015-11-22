@@ -56,14 +56,6 @@ def test_init():
     assert 'invenio-admin' in app.extensions
 
 
-def test_view(app):
-    """Test view."""
-    with app.test_client() as client:
-        res = client.get("/")
-        assert res.status_code == 200
-        assert 'Welcome to Invenio-Admin' in str(res.data)
-
-
 class TestUser(UserMixin):
     """Test user class."""
 

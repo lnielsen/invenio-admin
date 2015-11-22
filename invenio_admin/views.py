@@ -22,13 +22,11 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Invenio module that adds administration panel to the system."""
+"""Administration interface for Invenio."""
 
 from __future__ import absolute_import, print_function
 
-from flask import Blueprint, render_template
 from flask_admin import AdminIndexView
-from flask_babelex import gettext as _
 from flask_login import current_user
 
 
@@ -39,23 +37,9 @@ def protected_adminview_factory(cls):
 
         def is_accessible(self):
             """Protect with authentication."""
-            return current_user.is_authenticated
+            return current_user.is_authenticated()
+
     return ProtectedAdminView
 
 ProtectedAdminIndexView = protected_adminview_factory(AdminIndexView)
 """Create protected AdminIndexView."""
-
-blueprint = Blueprint(
-    'invenio_admin',
-    __name__,
-    template_folder='templates',
-    static_folder='static',
-)
-
-
-@blueprint.route("/")
-def index():
-    """Basic view."""
-    return render_template(
-        "invenio_admin/index.html",
-        module_name=_('Invenio-Admin'))

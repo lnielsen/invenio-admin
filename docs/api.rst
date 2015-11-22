@@ -25,6 +25,13 @@
 API Docs
 ========
 
-invenio_admin
--------------
+.. automodule:: invenio_admin.ext
+   :members:
+   :undoc-members:
 
+View factory
+------------
+
+.. automodule:: invenio_admin.views
+   :members:
+   :undoc-members:
