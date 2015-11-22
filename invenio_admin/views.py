@@ -26,8 +26,11 @@
 
 from __future__ import absolute_import, print_function
 
+from flask import current_app, redirect, request, url_for, g
 from flask_admin import AdminIndexView
 from flask_login import current_user
+
+from .permissions import admin_access_permission
 
 
 def protected_adminview_factory(cls):
@@ -36,8 +39,20 @@ def protected_adminview_factory(cls):
         """Admin view class protected by authentication."""
 
         def is_accessible(self):
-            """Protect with authentication."""
-            return current_user.is_authenticated()
+            """Require authentication and authorization."""
+            return current_user.is_authenticated() and \
+                admin_access_permission.can() and \
+                super(ProtectedAdminView, self).is_accessible()
+
+        def inaccessible_callback(self, name, **kwargs):
+            """Redirect to login if user is not logged in."""
+            if not current_user.is_authenticated():
+                # Redirect to login page if user is not logged in.
+                return redirect(url_for(
+                    current_app.config['ADMIN_LOGIN_ENDPOINT'],
+                    next=request.url))
+            super(ProtectedAdminView, self).inaccessible_callback(
+                name, **kwargs)
 
     return ProtectedAdminView
 

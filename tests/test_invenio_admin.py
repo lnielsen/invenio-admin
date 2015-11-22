@@ -29,8 +29,9 @@ from __future__ import absolute_import, print_function
 
 import importlib
 
+import pkg_resources
 from flask import Flask
-from flask_login import UserMixin, login_user
+from flask_login import login_user
 from mock import patch
 from pkg_resources import EntryPoint
 
@@ -56,48 +57,42 @@ def test_init():
     assert 'invenio-admin' in app.extensions
 
 
-class TestUser(UserMixin):
-    """Test user class."""
-
-    def __init__(self, user_id):
-        """Constructor of the user."""
-        self.id = user_id
-
-    @classmethod
-    def get(cls, user_id):
-        """Getter of the TestUser."""
-        return cls(user_id)
-
-
 def test_admin_view_authenticated(app):
     """Test the authentication for the admin."""
-    login_manager = app.login_manager
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return TestUser.get(user_id)
-
-    @app.route('/login')
-    def login():
-        login_user(TestUser.get(1))
-        return "Logged In"
-
     with app.test_client() as client:
-        res = client.get("/admin", follow_redirects=True)
-        assert res.status_code == 403
-    with app.test_client() as client:
-        res = client.get("/admin/testmodel", follow_redirects=True)
-        assert res.status_code == 403
+        res = client.get("/admin/", follow_redirects=False)
+        # Assert redirect to login
+        assert res.status_code == 302
 
+    # Unauthenticated users are redirect to login page.
     with app.test_client() as client:
-        res = client.get('/login', follow_redirects=True)
-        res = client.get("/admin", follow_redirects=True)
+        res = client.get("/admin/testmodel/", follow_redirects=False)
+        # Assert redirect to login
+        assert res.status_code == 302
+
+    # User 1 can access admin because it has ActioNeed(admin-access)
+    with app.test_client() as client:
+        res = client.get('/login/?user=1')
+        assert res.status_code == 200
+        res = client.get('/admin/')
+        assert res.status_code == 200
+        res = client.get('/admin/testmodel/')
         assert res.status_code == 200
 
+    # User 2 is missing ActioNeed(admin-access) and thus can't access admin.
+    # 403 error returned.
+    try:
+        pkg_resources.get_distribution('invenio-access')
+        status = 200
+    except pkg_resources.DistributionNotFound:
+        status = 403
+
     with app.test_client() as client:
-        res = client.get('/login', follow_redirects=True)
-        res = client.get("/admin/testmodel", follow_redirects=True)
-        assert res.status_code == 200
+        res = client.get('/login/?user=2')
+        res = client.get("/admin/")
+        assert res.status_code == status
+        res = client.get("/admin/testmodel/")
+        assert res.status_code == status
 
 
 class MockEntryPoint(EntryPoint):
